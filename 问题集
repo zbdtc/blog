@@ -3,3 +3,5 @@
 	address : awesome.js:317
 	problem : $.ajax().done().fail()当服务器返回{body=null}时，即使Status Code是200，任然调用的是fail（）
 }
+
+test git
