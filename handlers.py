@@ -348,6 +348,58 @@ async def api_delete_blog(id, request):
     await b.remove()
     return dict(id=id)
 
+#------------------用户管理-----------------------------------
+# 显示所有的用户
+@get('/show_all_users')
+async def show_all_users():
+    users = await User.findAll()
+    logging.info('to index...')
+    # return (404, 'not found')
+    for user in users:
+        user.passwd = '**********'
+
+    return {
+        '__template__': 'users.html',
+        'users': users
+    }
+
+@get('/api/users')
+async def aip_get_users(*, page=1):
+    page_index = get_page_index(page)
+    num = await User.findjNumber('count(id)')
+    p = Page(num, page_index, 5)
+    if num == 0:
+        return dict(page=p, users=())
+    users = await User.findAll(orderBy='created_at desc', limit=(p.offset, p.limit))
+    logging.info('users = %s and type = %s' % (users, type(users)))
+    for u in users:
+        u.passwd = '******'
+    return dict(users=users,page=p)
+
+# 用户管理页面
+@get('/manage/users')
+def manage_users(*, page='1'):
+    return {
+        '__template__': 'manage_users.html',
+        'page_index': get_page_index(page)
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -360,14 +412,7 @@ async def a(request):
     body = '<h1>hello:/greeting xxxx<h1>' 
     return body
 
-@get('/api/users')
-async def api_get_users(request):
-    print('ajax request ====', request)
-    users = await User.findAll(orderBy=' created_at desc')
-    for u in users:
-        u.passwd = '******'
-    print('users ------------------', users)
-    return dict(users=users)
+
 
 @post('/api/test')
 def x(request):
