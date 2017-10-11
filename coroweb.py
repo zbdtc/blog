@@ -37,6 +37,7 @@ def post(path):
         return wrapper
     return decorator
 
+# 如果url处理函数需要传入关键字参数，且默认是空得话，获取这个key
 def get_required_kw_args(fn):
     args = []
     params = inspect.signature(fn).parameters
@@ -45,6 +46,7 @@ def get_required_kw_args(fn):
             args.append(name)
     return tuple(args)
 
+# 如果url处理函数需要传入关键字参数，获取这个key
 def get_named_kw_args(fn):
     args = []
     params = inspect.signature(fn).parameters
@@ -53,12 +55,14 @@ def get_named_kw_args(fn):
             args.append(name)
     return tuple(args)
 
+# 判断是否有指定命名关键字参数
 def has_named_kw_args(fn):
     params = inspect.signature(fn).parameters
     for name, param in params.items():
         if param.kind == inspect.Parameter.KEYWORD_ONLY:
             return True
 
+# 判断是否有关键字参数，VAR_KEYWORD对应**kw
 def has_var_kw_arg(fn):
     params = inspect.signature(fn).parameters
     for name, param in params.items():
@@ -66,6 +70,7 @@ def has_var_kw_arg(fn):
             return True
 
 
+# 判断是否存在一个参数叫做request，并且该参数要在其他普通的位置参数之后，即属于*kw或者**kw或者*或者*args之后的参数
 def has_request_arg(fn):
     sig = inspect.signature(fn)
     params = sig.parameters

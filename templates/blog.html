@@ -5,24 +5,34 @@
 {% block beforehead %}
 
 <script>
-var comment_url = '/api/blogs/{{ blog.id }}/comments';
-$(function () {
-    var $form = $('#form-comment');
-    $form.submit(function (e) {
-        e.preventDefault();
-        $form.showFormError('');
-        var content = $form.find('textarea').val().trim();
-        if (content==='') {
-            return $form.showFormError('请输入评论内容！');
-        }
-        $form.postJSON(comment_url, { content: content }, function (err, result) {
+    function initVM(data){
+        console.log(data)
+    }
+    var comment_url = '/api/blogs/{{ blog.id }}/comments';
+    $(function () {
+        getJSON('/api/{{blog.id}}/comments',  function (err, results) {
             if (err) {
-                return $form.showFormError(err);
+                return fatal(err);
             }
-            refresh();
+            initVM(results)
+        });
+
+        var $form = $('#form-comment');
+        $form.submit(function (e) {
+            e.preventDefault();
+            $form.showFormError('');
+            var content = $form.find('textarea').val().trim();
+            if (content==='') {
+                return $form.showFormError('请输入评论内容！');
+            }
+            $form.postJSON(comment_url, { content: content }, function (err, result) {
+                if (err) {
+                    return $form.showFormError(err);
+                }
+                refresh();
+            });
         });
     });
-});
 </script>
 
 {% endblock %}

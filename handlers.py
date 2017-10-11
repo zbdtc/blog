@@ -330,7 +330,6 @@ async def get_blog(request,*,id):
         '__template__': 'blog.html',
         'blog': blog,
         # 'comments': comments,
-        '__user__':request.__user__
     }
 
 # 删除一条博客
@@ -355,8 +354,6 @@ async def show_all_users():
     users = await User.findAll()
     logging.info('to index...')
     # return (404, 'not found')
-    for user in users:
-        user.passwd = '**********'
 
     return {
         '__template__': 'users.html',
@@ -366,7 +363,7 @@ async def show_all_users():
 @get('/api/users')
 async def aip_get_users(*, page=1):
     page_index = get_page_index(page)
-    num = await User.findjNumber('count(id)')
+    num = await User.findNumber('count(id)')
     p = Page(num, page_index, 5)
     if num == 0:
         return dict(page=p, users=())
@@ -376,7 +373,7 @@ async def aip_get_users(*, page=1):
         u.passwd = '******'
     return dict(users=users,page=p)
 
-# 用户管理页面
+# 查看所有用户
 @get('/manage/users')
 def manage_users(*, page='1'):
     return {
@@ -384,9 +381,38 @@ def manage_users(*, page='1'):
         'page_index': get_page_index(page)
     }
 
+#--------------------评论管理------------------------------
+#发表评论
+@post('/api/blogs/{id}/comments')
+async def api_create_comment(id, request, *, content):
+    # 对某个博客发表评论
+    user = request.__user__
+    # 必须为登陆状态下，评论
+    if user is None:
+        raise APIPermissionError('content')
+    # 评论不能为空
+    if not content or not content.strip():
+        raise APIValueError('content')
+    # 查询一下博客id是否有对应的博客
+    blog = await Blog.find(id)
+    # 没有的话抛出错误
+    if blog is None:
+        raise APIResourceNotFoundError('Blog')
+    # 构建一条评论数据
+    comment = Comment(blog_id=blog.id, user_id=user.id, user_name=user.name,
+                      user_image=user.image, content=content.strip())
+    # 保存到评论表里
+    await comment.save()
+    return comment
 
-
-
+#获取评论
+@get('/api/{id}/comments')
+async def api_comments(request, *, id):
+    comment = await Comment.findAll('blog_id=\''+id+'\'', orderBy='created_at desc')
+    print(comment)
+    return {
+        'comments':comment
+    }
 
 
 
