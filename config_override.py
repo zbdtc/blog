@@ -1,7 +1,7 @@
 configs = {
     'db': {
 	    'host': 'localhost',
-	    'password': '***********',
+	    'password': '12345678',
 	    'database': 'awesome'
     },
 }
