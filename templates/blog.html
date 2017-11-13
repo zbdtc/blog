@@ -6,14 +6,32 @@
 
 <script>
     function initVM(data){
-        console.log(data)
+        vm_comments = new Vue({
+            el:"#vm_comments",
+            data:{
+                comments:data.comments,
+                blog_user_id:"{{blog.user_id}}"
+            },
+            computed:{
+                ok:function(){
+                    if(this.comments&&this.comments.length!=0){
+                        return true;
+                    }
+                    else{
+                        return false;
+                    }
+                }
+            }
+        })
     }
     var comment_url = '/api/blogs/{{ blog.id }}/comments';
     $(function () {
-        getJSON('/api/{{blog.id}}/comments',  function (err, results) {
+        getJSON('/api/{{blog.id}}/comments',  function(err, results) {
             if (err) {
+                console.log(err)
                 return fatal(err);
             }
+
             initVM(results)
         });
 
@@ -43,7 +61,7 @@
         <article class="uk-article">
             <h2>{{ blog.name }}</h2>
             <p class="uk-article-meta">发表于{{ blog.created_at|datetime }}</p>
-            <p>{{ blog.content|safe}}</p>
+            <p>{{ blog.html_content|safe}}</p>
         </article>
 
         <hr class="uk-article-divider">
@@ -72,27 +90,26 @@
         <hr class="uk-article-divider">
     {% endif %}
 
-        <h3>最新评论</h3>
+        <div id="vm_comments">
+            <h3>最新评论</h3>
 
-        <ul class="uk-comment-list">
-            {% for comment in comments %}
-            <li>
-                <article class="uk-comment">
-                    <header class="uk-comment-header">
-                        <img class="uk-comment-avatar uk-border-circle" width="50" height="50" src="{{ comment.user_image }}">
-                        <h4 class="uk-comment-title">{{ comment.user_name }} {% if comment.user_id==blog.user_id %}(作者){% endif %}</h4>
-                        <p class="uk-comment-meta">{{ comment.created_at|datetime }}</p>
-                    </header>
-                    <div class="uk-comment-body">
-                        {{ comment.html_content|safe }}
-                    </div>
-                </article>
-            </li>
-            {% else %}
-            <p>还没有人评论...</p>
-            {% endfor %}
-        </ul>
+            <ul class="uk-comment-list" v-if="ok">
+                <li v-repeat="comment:comments" >
+                    <article class="uk-comment">
+                        <header class="uk-comment-header">
+                            <img class="uk-comment-avatar uk-border-circle" width="50" height="50" v-attr="src:comment.user_image">
+                            <h4 class="uk-comment-title" v-text="(comment.user_name)+(comment.user_id==blog_user_id?'(author)':'')"></h4>
+                            <p class="uk-comment-meta" v-text="comment.created_at.toDateTime()"></p>
+                        </header>
+                        <div class="uk-comment-body" v-html="comment.html_content"></div>
+                    </article>
+                </li>
+            </ul>
 
+            <ul class="uk-comment-list" v-if="!ok">            
+                <p>还没有人评论...</p>
+            </ul>
+        </div>
     </div>
 
     <div class="uk-width-medium-1-4">

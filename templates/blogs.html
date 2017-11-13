@@ -5,23 +5,41 @@
 {% block beforehead %}
 
 <script>
+    function initVM(data){
+        vm = new Vue({
+            el:"#vm",
+            data:{
+                blogs:data.blogs
+            }
+        });
+
+        $("#vm").show();
+    };
+
+    $(function(){
+        getJSON('/api/blogs',{
+            page:{{page_index}}
+        },function(err, results){
+            if(err){
+                return alert(err.message || err.error || err);
+            }
+            initVM(results)
+        });
+    });
 </script>
 
 {% endblock %}
 
 {% block content %}
 
-    <div class="uk-width-medium-3-4">
-    {% for blog in blogs %}
-        <article class="uk-article">
-            <h2><a href="/blog/{{ blog.id }}">{{ blog.name }}</a></h2>
-            <p class="uk-article-meta">发表于{{ blog.created_at|datetime }}</p>
-            <p>{{ blog.summary }}</p>
-            <p><a href="/blog/{{ blog.id }}">继续阅读 <i class="uk-icon-angle-double-right"></i></a></p>
+    <div id="vm" class="uk-width-medium-3-4">
+        <article v-repeat="blog:blogs" class="uk-article">
+            <h2><a v-attr="href:'/blog/'+blog.id" v-text="blog.name"></a></h2>
+            <p class="uk-article-meta" v-text="'发表于'+blog.created_at.toDateTime()"></p>
+            <p v-text=" blog.summary"></p>
+            <p><a v-attr="href:'/blog/'+blog.id" v-text="'继续阅读'"><i class="uk-icon-angle-double-right"></i></a></p>
         </article>
         <hr class="uk-article-divider">
-    {% endfor %}
-
     </div>
 
     <div class="uk-width-medium-1-4">

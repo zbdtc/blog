@@ -5,7 +5,7 @@ __author__ = 'z b'
 
 ' url handlers '
 
-import re, time, json, logging, hashlib, base64, asyncio
+import re, time, json, logging, hashlib, base64, asyncio, markdown2
 from coroweb import get, post
 from Models import User, Comment, Blog, next_id
 from config import configs
@@ -84,16 +84,10 @@ def get_page_index(page_str):
 
 #首页
 @get('/')
-def home(request):
-    summary = 'Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.'
-    blogs = [
-        Blog(id='1', name='Test Blog', summary=summary, created_at=time.time()-120),
-        Blog(id='2', name='Something New', summary=summary, created_at=time.time()-3600),
-        Blog(id='3', name='Learn Swift', summary=summary, created_at=time.time()-7200)
-    ]
+def home(request, *, page='1'):
     return {
         '__template__': 'blogs.html',
-        'blogs': blogs
+        'page_index': get_page_index(page)
     }
 
 #注册页
@@ -174,7 +168,7 @@ async def api_register_user(*, email, name, passwd):
 @get('/signin')
 def signin():
     return {
-        '__template__': 'signin.html'
+        '__template__': 'signin.html',
     }
 
 
@@ -324,7 +318,7 @@ async def get_blog(request,*,id):
     # # markdown2是个扩展模块，这里把博客正文和评论套入到markdonw2中
     # for c in comments:
     #     c.html_content = text2html(c.content)
-    # blog.html_content = markdown2.markdown(blog.content)
+    blog.html_content = markdown2.markdown(blog.content)
     # 返回页面
     return {
         '__template__': 'blog.html',
@@ -407,12 +401,72 @@ async def api_create_comment(id, request, *, content):
 
 #获取评论
 @get('/api/{id}/comments')
-async def api_comments(request, *, id):
+async def api_comments_id(request, *, id):
     comment = await Comment.findAll('blog_id=\''+id+'\'', orderBy='created_at desc')
-    print(comment)
+    for x in comment:
+        x.html_content = markdown2.markdown(x.content)
     return {
         'comments':comment
     }
+
+
+# 评论管理页面
+@get('/manage/comments')
+def manage_comments(*, page='1'):
+    return {
+        '__template__': 'manage_comments.html',
+        'page_index': get_page_index(page)
+    }
+
+# 根据page获取评论，注释可参考 index 函数的注释，不细写了
+@get('/api/comments')
+async def api_comments(*, page='1'):
+    page_index = get_page_index(page)
+    num = await Comment.findNumber('count(id)')
+    p = Page(num, page_index, 5)
+    if num == 0:
+        return dict(page=p, comments=())
+    comments = await Comment.findAll(orderBy='created_at desc', limit=(p.offset, p.limit))
+    return dict(page=p, comments=comments)
+
+
+#删除评论
+@post('/api/comments/{id}/delete')
+async def api_delete_comments(id, request):
+    # 删除某个评论
+    logging.info(id)
+    # 先检查是否是管理员操作，只有管理员才有删除评论权限
+    check_admin(request)
+    # 查询一下评论id是否有对应的评论
+    c = await Comment.find(id)
+    # 没有的话抛出错误
+    if c is None:
+        raise APIResourceNotFoundError('Comment')
+    # 有的话删除
+    await c.remove()
+    return dict(id=id)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
